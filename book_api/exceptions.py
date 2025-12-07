@@ -1,0 +1,13 @@
+class ApiServiceError(Exception):
+    """Генерация исключения при status_code != 200"""
+    ...
+
+class BookError(Exception):
+    ...
+
+
+class UrlNotExists(Exception):
+    ...
+
+class APIKeyNotExists(Exception):
+    ...
