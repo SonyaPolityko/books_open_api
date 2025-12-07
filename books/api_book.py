@@ -1,13 +1,18 @@
 import os
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import TypeAlias
 
 import requests
-from config import PRINT_TYPE, TIMEOUT
+from config import BOOK_PRINT_TYPE, TIMEOUT
 from dotenv import load_dotenv
-from exceptions import APIKeyNotExists, ApiServiceError, BookError, UrlNotExists
+from exceptions import (
+    APIKeyNotExists,
+    ApiServiceError,
+    BookError,
+    UrlNotExists,
+)
 from requests import JSONDecodeError, Response
+from typesdef import api_key, url
 
 load_dotenv()
 
@@ -18,19 +23,16 @@ class Book:
     author: str
 
 
-url: TypeAlias = str
-
-
 @lru_cache(maxsize=None)
 def _check_url_exists() -> url:
-    url = os.getenv("BOOK_URL")
+    url = os.getenv("BASE_BOOK_URL")
     if url is None:
         raise UrlNotExists
     return url
 
 
 @lru_cache(maxsize=None)
-def _check_api_key_exists() -> str:
+def _check_api_key_exists() -> api_key:
     api_key = os.getenv("BOOK_API_KEY")
     if api_key is None:
         raise APIKeyNotExists
@@ -43,7 +45,7 @@ def _get_googleapi_response(title: str) -> Response:
     api_key = _check_api_key_exists()
     response = requests.get(
         url,
-        params={"q": title, "key": api_key, "printType": PRINT_TYPE},
+        params={"q": title, "key": api_key, "printType": BOOK_PRINT_TYPE},
         timeout=TIMEOUT,
     )
 
