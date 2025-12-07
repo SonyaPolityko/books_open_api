@@ -28,6 +28,10 @@ def _check_api_key_exists() -> api_key:
 
 
 system_promt_path = os.getenv("SYSTEM_PROMT")
+
+if system_promt_path is None:
+    raise ApiServiceError
+
 with open(system_promt_path, "r", encoding="utf-8") as f:
     system_prompt = f.read()
 
