@@ -3,10 +3,10 @@ import os
 from functools import lru_cache
 
 import requests
+from config import TIMEOUT
 from dotenv import load_dotenv
 from exceptions import APIKeyNotExists, ApiServiceError, UrlNotExists
 from typesdef import api_key, url
-from config import TIMEOUT
 
 load_dotenv()
 
@@ -27,18 +27,33 @@ def _check_api_key_exists() -> api_key:
     return api_key
 
 
-system_promt_path = os.getenv("SYSTEM_PROMT")
+def _check_model_exists() -> str:
+    model = os.getenv("MODEL")
+    if model is None:
+        raise APIKeyNotExists
+    return model
 
-if system_promt_path is None:
-    raise ApiServiceError
 
-with open(system_promt_path, "r", encoding="utf-8") as f:
-    system_prompt = f.read()
+@lru_cache(maxsize=None)
+def _check_system_promt_path() -> str:
+    system_promt_path = os.getenv("SYSTEM_PROMT")
+    if system_promt_path is None:
+        raise ApiServiceError
+    return system_promt_path
+
+
+def _get_system_promt() -> str:
+    system_promt_path = _check_system_promt_path()
+    with open(system_promt_path, "r", encoding="utf-8") as f:
+        system_prompt = f.read()
+    return system_prompt
 
 
 def _get_googleapi_response(user_prompt: str) -> requests.Response:
     url = _check_url_exists()
     api_key = _check_api_key_exists()
+    system_prompt = _get_system_promt()
+    model = _check_model_exists()
     response = requests.post(
         url=url,
         headers={
@@ -47,7 +62,7 @@ def _get_googleapi_response(user_prompt: str) -> requests.Response:
         },
         data=json.dumps(
             {
-                "model": "arcee-ai/trinity-mini:free",
+                "model": model,
                 "messages": [
                     {
                         "role": "system",
@@ -66,7 +81,7 @@ def _get_googleapi_response(user_prompt: str) -> requests.Response:
                 "reasoning": {"enabled": True},
             }
         ),
-        timeout=TIMEOUT
+        timeout=TIMEOUT,
     )
 
     if response.status_code != requests.codes.ok:
@@ -75,7 +90,7 @@ def _get_googleapi_response(user_prompt: str) -> requests.Response:
 
 
 if __name__ == "__main__":
-    response = _get_googleapi_response("Что-то китайское")
+    response = _get_googleapi_response("Радостное и уютное, но не детское")
     print(response)
     response = response.json()
     response = response["choices"][0]["message"]
